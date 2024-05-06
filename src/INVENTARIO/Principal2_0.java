@@ -52,23 +52,7 @@ public class Principal2_0 extends javax.swing.JFrame {
 
         
         configurarEncabezadosTabla();
-        
-     
-        
-  
-        
-        Buscar.addKeyListener(new KeyAdapter() {
-        @Override
-        public void keyReleased(KeyEvent e) {
-            String textoBuscado = Buscar.getText().trim();
-            filtrarTablaPorTexto(textoBuscado);
-        }
-    });
-    
-    
-    
 
-    
     Buscar.addKeyListener(new KeyAdapter() {
         @Override
         public void keyReleased(KeyEvent e) {

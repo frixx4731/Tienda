@@ -9,13 +9,30 @@ import DBObjetos.Producto;
 import INVENTARIO.Principal2_0;
 import INVENTARIO.AnimacionPanel;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.MenuElement;
 import javax.swing.table.DefaultTableModel;
 
 /*
@@ -33,20 +50,21 @@ public class Venta extends javax.swing.JFrame {
     /**
      * Creates new form Venta
      */
-       private Principal2_0 ventanaPrincipal;
 
-       private AnimacionPanel animador; // Añade esta línea
+    private Principal2_0 ventanaPrincipal;
+    private AnimacionPanel animador; // Añade esta línea
 
+    private List<Producto> listaProductosConArea;
+    private List<Producto> listaFiltrada = new ArrayList<>(); // Lista que refleja los productos filtrados
+
+    
     public Venta() {
         initComponents();
         
-        animador = new AnimacionPanel(); // Inicializa el animador
+        initProductosConArea();
 
-        
-        Estilos.addPlaceholderStyle(Prod);
-        
-        actualizarTablaInventario();
-    
+        animador = new AnimacionPanel(); // Inicializa el animador
+        Estilos.addPlaceholderStyle(Busqueda);        
         
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -55,10 +73,176 @@ public class Venta extends javax.swing.JFrame {
                 cerrarYVolver();
             }
         });
-    }
+        
+        
+        // Hacer que jPanel6 no sea opaco
+        jPanel6.setOpaque(false);
+        // Establecer un color de fondo semitransparente (e.g., blanco semitransparente)
+        Color semiTransparentColor = new Color(255, 255, 255, 123); // Cambia 123 al valor alpha deseado
+        jPanel6.setBackground(semiTransparentColor);
+        // Si es necesario, puedes requerir repintar el panel para asegurar que el cambio es visible
+        jPanel6.repaint();
+        jPanel6.setVisible(false); // Asegúrate de que el JPanel inicialmente esté oculto
+
+        
+
+        Busqueda.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                String textoBuscado = Busqueda.getText().trim();
+                if (textoBuscado.isEmpty()) {
+                    jPanel6.setVisible(false);
+                } else {
+                    filtrarTablaPorTexto(textoBuscado);
+                    ajustarAlturaComponentes();
+                    jPanel6.setVisible(true);
+                }
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if ((e.getKeyCode() == KeyEvent.VK_DOWN || e.getKeyCode() == KeyEvent.VK_UP) && TablaBusqueda.isVisible()) {
+                    TablaBusqueda.requestFocus();
+                    cambiarSeleccionEnTabla(e.getKeyCode());
+                    e.consume();
+                }
+            }
+        });
+
+        TablaBusqueda.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_DOWN:
+                    case KeyEvent.VK_UP:
+                        cambiarSeleccionEnTabla(e.getKeyCode());
+                        e.consume();
+                        break;
+                    case KeyEvent.VK_ENTER:
+                        if (TablaBusqueda.getSelectedRow() != -1) {
+                            agregarProductoACobroYCerrarTabla();
+                            e.consume();
+                        }
+                        break;
+                }
+            }
+        });
+
+
 
     
-            public void setVentanaPrincipal(Principal2_0 principal) {
+    }
+    
+    
+    private void cambiarSeleccionEnTabla(int keyCode) {
+        int rowCount = TablaBusqueda.getRowCount();
+        int selectedRow = TablaBusqueda.getSelectedRow();
+
+        if (rowCount > 0) {
+            if (keyCode == KeyEvent.VK_DOWN) {
+                selectedRow = (selectedRow + 1) % rowCount;
+            } else if (keyCode == KeyEvent.VK_UP) {
+                selectedRow = (selectedRow - 1 + rowCount) % rowCount;
+            }
+            TablaBusqueda.setRowSelectionInterval(selectedRow, selectedRow);
+            TablaBusqueda.scrollRectToVisible(TablaBusqueda.getCellRect(selectedRow, 0, true));
+        }
+    }
+
+
+    
+    
+    
+private void ajustarAlturaComponentes() {
+    int filaAltura = TablaBusqueda.getRowHeight();
+    int numFilas = TablaBusqueda.getRowCount();
+    int altura = filaAltura * numFilas + 24; // Asumiendo que el header tiene un alto de 24px
+
+    if (numFilas > 5) {
+        altura = filaAltura * 5 + 24; // Limita la altura si hay muchas filas
+    }
+
+    jScrollPane2.setPreferredSize(new Dimension(jScrollPane2.getWidth(), altura));
+    jPanel6.setPreferredSize(new Dimension(jPanel6.getWidth(), altura + 10)); // Un poco más grande para acomodar márgenes
+    jPanel6.revalidate(); // Revalida el layout para aplicar cambios de tamaño
+    jPanel6.repaint(); // Redibuja el panel
+}
+    
+
+
+  
+
+
+
+
+private void initProductosConArea() {
+    try {
+        CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+        listaProductosConArea = dao.obtenerProductosConNombreArea(); // Carga inicial de productos
+    } catch (SQLException e) {
+        JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+        e.printStackTrace();
+    }
+}
+
+private void filtrarTablaPorTexto(String texto) {
+    DefaultTableModel model = (DefaultTableModel) TablaBusqueda.getModel();
+    model.setRowCount(0); // Limpia la tabla primero
+    listaFiltrada.clear(); // Limpia la lista filtrada
+
+    // Filtra la lista basado en el texto ingresado y actualiza la tabla
+    for (Producto prod : listaProductosConArea) {
+        if (prod.getNombre().toLowerCase().contains(texto.toLowerCase()) || prod.getCodigoBarras().toLowerCase().contains(texto.toLowerCase())) {
+            model.addRow(new Object[]{
+                prod.getCodigoBarras(),
+                prod.getNombre(),
+                prod.getMarca(),
+                prod.getPrecio(),
+                prod.getUnidadesDisponibles(),
+                prod.getContenido(),
+                prod.getNombreArea()
+            });
+            listaFiltrada.add(prod); // Añade al producto a la lista filtrada
+        }
+    }
+}
+
+private void agregarProductoACobroYCerrarTabla() {
+    int selectedRow = TablaBusqueda.getSelectedRow();
+    if (selectedRow != -1) {
+        Producto selectedProduct = listaFiltrada.get(selectedRow); // Usa lista filtrada
+        DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
+        
+        // Preparar los datos del producto seleccionado
+        modelCobro.insertRow(0, new Object[]{
+            selectedProduct.getCodigoBarras(),
+            selectedProduct.getNombre(),
+            selectedProduct.getMarca(),
+            selectedProduct.getUnidadesDisponibles(),
+            selectedProduct.getContenido(),
+            selectedProduct.getNombreArea(),
+            selectedProduct.getPrecio()
+        });
+        
+       // Asegura que la nueva fila sea visible en la parte superior
+        TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+        
+        // Asegurarse de que el JScrollPane muestra la fila recién insertada en la parte superior
+        TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+        
+        jPanel6.setVisible(false); // Oculta jPanel6 al seleccionar un producto
+    }
+}
+
+
+    
+    
+    
+    
+
+    
+    
+    public void setVentanaPrincipal(Principal2_0 principal) {
         this.ventanaPrincipal = principal;
     }
 
@@ -68,6 +252,9 @@ public class Venta extends javax.swing.JFrame {
         }
         dispose(); // Cierra esta ventana
     }
+    
+    
+    
     
     
     /**
@@ -80,6 +267,9 @@ public class Venta extends javax.swing.JFrame {
     private void initComponents() {
 
         jPanel1 = new javax.swing.JPanel();
+        jPanel6 = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        TablaBusqueda = new javax.swing.JTable();
         MenuPlegable = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
@@ -96,17 +286,60 @@ public class Venta extends javax.swing.JFrame {
         iva = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
-        Prod = new javax.swing.JTextField();
+        Busqueda = new javax.swing.JTextField();
         btnEliminar = new javax.swing.JButton();
-        btnCobro = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
-        tablita = new javax.swing.JTable();
+        TablaCobro = new javax.swing.JTable();
+        btnCobro = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setBackground(new java.awt.Color(102, 153, 0));
 
         jPanel1.setBackground(new java.awt.Color(255, 255, 255));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        jPanel6.setBackground(new java.awt.Color(255, 255, 255));
+
+        TablaBusqueda.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null},
+                {null, null, null, null}
+            },
+            new String [] {
+                "", "", "", ""
+            }
+        ) {
+            boolean[] canEdit = new boolean [] {
+                false, true, false, false
+            };
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        jScrollPane2.setViewportView(TablaBusqueda);
+        if (TablaBusqueda.getColumnModel().getColumnCount() > 0) {
+            TablaBusqueda.getColumnModel().getColumn(0).setResizable(false);
+            TablaBusqueda.getColumnModel().getColumn(2).setResizable(false);
+            TablaBusqueda.getColumnModel().getColumn(3).setResizable(false);
+        }
+
+        javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
+        jPanel6.setLayout(jPanel6Layout);
+        jPanel6Layout.setHorizontalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 440, Short.MAX_VALUE)
+        );
+        jPanel6Layout.setVerticalGroup(
+            jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel6Layout.createSequentialGroup()
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 13, Short.MAX_VALUE))
+        );
+
+        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 90, 440, 440));
 
         MenuPlegable.setBackground(new java.awt.Color(204, 204, 204));
         MenuPlegable.setLayout(null);
@@ -250,32 +483,30 @@ public class Venta extends javax.swing.JFrame {
                 .addContainerGap())
         );
 
-        Prod.setText("Producto");
-        Prod.addFocusListener(new java.awt.event.FocusAdapter() {
+        Busqueda.setText("Producto");
+        Busqueda.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
-                ProdFocusGained(evt);
+                BusquedaFocusGained(evt);
             }
             public void focusLost(java.awt.event.FocusEvent evt) {
-                ProdFocusLost(evt);
+                BusquedaFocusLost(evt);
             }
         });
-        Prod.addActionListener(new java.awt.event.ActionListener() {
+        Busqueda.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                ProdActionPerformed(evt);
+                BusquedaActionPerformed(evt);
             }
         });
 
         btnEliminar.setText("Eliminar");
-
-        btnCobro.setText("Cobrar");
-        btnCobro.addActionListener(new java.awt.event.ActionListener() {
+        btnEliminar.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnCobroActionPerformed(evt);
+                btnEliminarActionPerformed(evt);
             }
         });
 
-        tablita.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
-        tablita.setModel(new javax.swing.table.DefaultTableModel(
+        TablaCobro.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        TablaCobro.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
                 {null, null, null, null, null},
                 {null, null, null, null, null},
@@ -294,7 +525,14 @@ public class Venta extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        jScrollPane1.setViewportView(tablita);
+        jScrollPane1.setViewportView(TablaCobro);
+
+        btnCobro.setText("Cobrar");
+        btnCobro.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCobroActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -305,19 +543,15 @@ public class Venta extends javax.swing.JFrame {
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(30, 30, 30)
-                        .addComponent(Prod, javax.swing.GroupLayout.PREFERRED_SIZE, 440, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(30, 30, 30)
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 730, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(30, 30, 30)
-                        .addComponent(btnEliminar, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(30, 30, 30)
-                        .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addGap(670, 670, 670)
-                        .addComponent(btnCobro, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(Busqueda, javax.swing.GroupLayout.PREFERRED_SIZE, 440, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                                .addGroup(jPanel4Layout.createSequentialGroup()
+                                    .addComponent(btnEliminar, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                    .addComponent(btnCobro, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 730, javax.swing.GroupLayout.PREFERRED_SIZE))))
                 .addGap(0, 30, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
@@ -325,16 +559,16 @@ public class Venta extends javax.swing.JFrame {
             .addGroup(jPanel4Layout.createSequentialGroup()
                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(24, 24, 24)
-                .addComponent(Prod, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(26, 26, 26)
+                .addComponent(Busqueda, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(83, 83, 83)
                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(20, 20, 20)
-                .addComponent(btnEliminar)
-                .addGap(27, 27, 27)
+                .addGap(54, 54, 54)
                 .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(30, 30, 30)
-                .addComponent(btnCobro)
-                .addGap(0, 87, Short.MAX_VALUE))
+                .addGap(48, 48, 48)
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnEliminar)
+                    .addComponent(btnCobro))
+                .addContainerGap())
         );
 
         jPanel1.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(50, 0, 820, 530));
@@ -353,9 +587,9 @@ public class Venta extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void ProdActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ProdActionPerformed
+    private void BusquedaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_BusquedaActionPerformed
         // TODO add your handling code here:
-    }//GEN-LAST:event_ProdActionPerformed
+    }//GEN-LAST:event_BusquedaActionPerformed
 
     private void btnCobroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCobroActionPerformed
 //        Cobro cobro= new Cobro();
@@ -377,20 +611,24 @@ public class Venta extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jLabel4MouseClicked
 
-    private void ProdFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_ProdFocusGained
-        if(Prod.getText().equals("Producto")){
-            Prod.setText(null);
-            Prod.requestFocus();
-            Estilos.removePlaceholderStyle(Prod);            
+    private void BusquedaFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_BusquedaFocusGained
+        if(Busqueda.getText().equals("Producto")){
+            Busqueda.setText(null);
+            Busqueda.requestFocus();
+            Estilos.removePlaceholderStyle(Busqueda);            
         }
-    }//GEN-LAST:event_ProdFocusGained
+    }//GEN-LAST:event_BusquedaFocusGained
 
-    private void ProdFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_ProdFocusLost
-        if(Prod.getText().length()==0){
-            Estilos.addPlaceholderStyle(Prod);
-            Prod.setText("Producto");
+    private void BusquedaFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_BusquedaFocusLost
+        if(Busqueda.getText().length()==0){
+            Estilos.addPlaceholderStyle(Busqueda);
+            Busqueda.setText("Producto");
         }
-    }//GEN-LAST:event_ProdFocusLost
+    }//GEN-LAST:event_BusquedaFocusLost
+
+    private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_btnEliminarActionPerformed
 
     /**
      * @param args the command line arguments
@@ -428,7 +666,7 @@ public class Venta extends javax.swing.JFrame {
     }
     
     private void actualizarTablaInventario() {
-    DefaultTableModel model = (DefaultTableModel) tablita.getModel();
+    DefaultTableModel model = (DefaultTableModel) TablaCobro.getModel();
     model.setRowCount(0); // Limpia la tabla completamente.
 
     try {
@@ -454,8 +692,10 @@ public class Venta extends javax.swing.JFrame {
 }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTextField Busqueda;
     private javax.swing.JPanel MenuPlegable;
-    private javax.swing.JTextField Prod;
+    private javax.swing.JTable TablaBusqueda;
+    private javax.swing.JTable TablaCobro;
     private javax.swing.JButton btnCobro;
     private javax.swing.JButton btnEliminar;
     private javax.swing.JLabel desc;
@@ -472,9 +712,10 @@ public class Venta extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
+    private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JLabel sub;
-    private javax.swing.JTable tablita;
     private javax.swing.JLabel total;
     // End of variables declaration//GEN-END:variables
 }

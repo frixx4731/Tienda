@@ -4,18 +4,14 @@
  */
 package Consultas;
 import DBObjetos.*;
-import DBObjetos.Usuario.Rol;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import login.HashingUtil;
 
 /**
@@ -144,57 +140,6 @@ public List<Producto> obtenerProductosPorArea(String areaNombre) throws SQLExcep
     return listaProductos;
 }
 
-
-     
- 
-        /*
-    public boolean registrarProducto(Producto producto) {
-    String sql = "INSERT INTO Productos (Nombre, Descripción, CategoriaID, Precio, CantidadStock, NivelReorden, FechaCaducidad, CodigoBarras) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setString(1, producto.getNombre());
-            pstmt.setString(2, producto.getDescripción());
-            pstmt.setInt(3, producto.getCategoriaID());
-            pstmt.setDouble(4, producto.getPrecio());
-            pstmt.setInt(5, producto.getCantidadStock());
-            pstmt.setInt(6, producto.getNivelReorden());
-            pstmt.setDate(7, Date.valueOf(producto.getFechaCaducidad()));
-            pstmt.setString(8, producto.getCodigoBarras());
-
-
-            int affectedRows = pstmt.executeUpdate();
-
-            // Verificar si se insertó al menos un registro
-            return affectedRows > 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            // Puedes manejar la excepción de manera más específica si lo necesitas
-            return false;
-        }
-    }
-    
-    public boolean actualizarProducto(Producto producto) {
-    String sql = "UPDATE Productos SET Nombre = ?, Descripción = ?, CategoriaID = ?, Precio = ?, CantidadStock = ?, NivelReorden = ?, FechaCaducidad = ?, CodigoBarras = ? WHERE ProductoID = ?";
-
-    try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-        pstmt.setString(1, producto.getNombre());
-        pstmt.setString(2, producto.getDescripción());
-        pstmt.setInt(3, producto.getCategoriaID());
-        pstmt.setDouble(4, producto.getPrecio());
-        pstmt.setInt(5, producto.getCantidadStock());
-        pstmt.setInt(6, producto.getNivelReorden());
-        pstmt.setDate(7, Date.valueOf(producto.getFechaCaducidad()));
-        pstmt.setString(8, producto.getCodigoBarras());
-        pstmt.setInt(9, producto.getProductoID());
-
-        int affectedRows = pstmt.executeUpdate();
-        return affectedRows > 0;
-    } catch (SQLException e) {
-        e.printStackTrace();
-        return false;
-    }
-}*/
-
     
     public boolean eliminarProducto(int productoID) {
     String sql = "DELETE FROM Productos WHERE ProductoID = ?";
@@ -278,31 +223,7 @@ public List<Producto> obtenerProductosPorArea(String areaNombre) throws SQLExcep
     }
     return null; // Retornar null si el usuario no tiene respuestas de seguridad o no se encuentra
 }
-
-      /*
-      public ArrayList<String> obtenerRespuestasSeguridad(String nombreUsuario) throws SQLException {
-    ArrayList<String> respuestasSeguridad = new ArrayList<>();
-
-
-        String sql = "SELECT * FROM Usuario WHERE NombreUsuario = ? AND RespuestaSeguridad = SHA2(?, 256)";
-
-    try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-        pstmt.setString(1, nombreUsuario);
-
-        try (ResultSet rs = pstmt.executeQuery()) {
-            while (rs.next()) {
-                String respuesta = rs.getString("RespuestaSeguridad");
-                respuestasSeguridad.add(respuesta);
-            }
-        }
-    }
-
-    return respuestasSeguridad;
-}
-*/
-
-      
-      
+        
 
     public boolean cambiarContraseña(String nombreUsuario, String nuevaContrasena) {
         String sql = "UPDATE Usuario SET Contraseña = SHA2(?, 256) WHERE NombreUsuario = ?";
@@ -352,30 +273,7 @@ public boolean crearEmpleado(String nombreUsuario, String contraseñaHasheada, U
     }
 }
 
-/*
-       public boolean validarUsuario(String nombreUsuario, String contraseñaPlana) throws SQLException {
-        String sql = "SELECT Contraseña FROM Usuario WHERE NombreUsuario = ?";
-        
-        try (PreparedStatement pstmt = con.prepareStatement(sql)) {
-            pstmt.setString(1, nombreUsuario);
-            
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    // Obtener la contraseña hasheada almacenada en la base de datos
-                    String contraseñaHasheada = rs.getString("Contraseña");
-                    
-                    // Comparar la contraseña hasheada con la versión hasheada de la contraseña introducida
-                    // Aquí asumimos que tienes una función para hashear la contraseña
-                    String contraseñaVerificar = HashingUtil.hashPassword(contraseñaPlana);
-                    
-                    return contraseñaHasheada != null && contraseñaHasheada.equals(contraseñaVerificar);
-                }
-            }
-        }
-        return false;
-    }
-*/
-       
+ 
 public String obtenerContraseñaHashPorRol(String rol) {
     String sql = "SELECT ContraseñaHash FROM ConfiguracionRoles WHERE Rol = ?";
     try (PreparedStatement pstmt = con.prepareStatement(sql)) {
