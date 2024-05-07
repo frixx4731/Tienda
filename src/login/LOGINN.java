@@ -351,7 +351,6 @@ private Usuario obtenerUsuarioLogueado() {
         if(fieldPass.getText().length()==0){
             Estilos.addPlaceholderStyle(fieldPass);
             fieldPass.setText("Contraseña");
-            //jPasswordField2.setEchoChar('*');
         }
     }//GEN-LAST:event_fieldPassFocusLost
 
