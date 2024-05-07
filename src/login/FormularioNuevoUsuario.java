@@ -25,7 +25,7 @@ public class FormularioNuevoUsuario extends javax.swing.JFrame {
     /**
      * Creates new form FormularioNuevoUsuario
      */
-         private String rolSeleccionado;
+    private String rolSeleccionado;
     private ArrayList<String> preguntasSeleccionadas = new ArrayList<>();
     private ArrayList<String> respuestasDadas = new ArrayList<>();
     private int contadorDeRespuestas = 0;
@@ -37,19 +37,24 @@ public class FormularioNuevoUsuario extends javax.swing.JFrame {
         lblRoles.setText(rolSeleccionado); // Muestra el rol en la etiqueta
         
        Preguntas.addActionListener(new java.awt.event.ActionListener() {
-    public void actionPerformed(java.awt.event.ActionEvent evt) {
-        PreguntasActionPerformed(evt);
-    }
-});
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                PreguntasActionPerformed(evt);
+            }
+        });
       // Y para txtRespuesta así:
-txtRespuesta.addActionListener(new java.awt.event.ActionListener() {
-    public void actionPerformed(java.awt.event.ActionEvent evt) {
-        txtRespuestaActionPerformed(evt);
-    }
-});
+        txtRespuesta.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                txtRespuestaActionPerformed(evt);
+            }
+        });
 
-AbrirVentana();
-
+        AbrirVentana();
+        
+        Estilos.addPlaceholderStyle(Nombre);
+        Estilos.addPlaceholderStyle(Apellido);
+        Estilos.addPlaceholderStyle(Correo);
+        Estilos.addPlaceholderStyle(nomUsuario);
+        Estilos.addPlaceholderStyle(Contraseña);
     }
 
 private void AbrirVentana() {
@@ -114,6 +119,14 @@ private void cerrarYVolverAConfiguraciones() {
         });
 
         nomUsuario.setText("Nombre de usuario");
+        nomUsuario.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                nomUsuarioFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                nomUsuarioFocusLost(evt);
+            }
+        });
 
         btnAgregar.setText("Agregar");
         btnAgregar.addActionListener(new java.awt.event.ActionListener() {
@@ -147,11 +160,23 @@ private void cerrarYVolverAConfiguraciones() {
             public void focusGained(java.awt.event.FocusEvent evt) {
                 CorreoFocusGained(evt);
             }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                CorreoFocusLost(evt);
+            }
         });
 
         lblRoles.setText("REGISTRARSE");
 
-        Contraseña.setText("jPasswordField1");
+        Contraseña.setText("Contraseña");
+        Contraseña.setEchoChar('\u0000');
+        Contraseña.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                ContraseñaFocusGained(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                ContraseñaFocusLost(evt);
+            }
+        });
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -343,17 +368,59 @@ boolean exito = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, pregunt
     }//GEN-LAST:event_ApellidoFocusGained
 
     private void ApellidoFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_ApellidoFocusLost
-        if(Apellido.getText().equals("Apellido")){
-            Apellido.setText(null);
-            Apellido.requestFocus();
-            Estilos.removePlaceholderStyle(Apellido);
-            
+        if(Apellido.getText().length()==0){
+            Estilos.addPlaceholderStyle(Apellido);
+            Apellido.setText("Apellido");
         }
     }//GEN-LAST:event_ApellidoFocusLost
 
     private void CorreoFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_CorreoFocusGained
-        
+        if(Correo.getText().equals("Correo")){
+            Correo.setText(null);
+            Correo.requestFocus();
+            Estilos.removePlaceholderStyle(Correo);            
+        }
     }//GEN-LAST:event_CorreoFocusGained
+
+    private void CorreoFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_CorreoFocusLost
+        if(Correo.getText().length()==0){
+            Estilos.addPlaceholderStyle(Correo);
+            Correo.setText("Correo");
+        }
+    }//GEN-LAST:event_CorreoFocusLost
+
+    private void nomUsuarioFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_nomUsuarioFocusGained
+        if(nomUsuario.getText().equals("Nombre de usuario")){
+            nomUsuario.setText(null);
+            nomUsuario.requestFocus();
+            Estilos.removePlaceholderStyle(nomUsuario);            
+        }
+    }//GEN-LAST:event_nomUsuarioFocusGained
+
+    private void nomUsuarioFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_nomUsuarioFocusLost
+        if(nomUsuario.getText().length()==0){
+            Estilos.addPlaceholderStyle(nomUsuario);
+            nomUsuario.setText("Nombre de usuario");
+        }
+        
+    }//GEN-LAST:event_nomUsuarioFocusLost
+
+    private void ContraseñaFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_ContraseñaFocusGained
+        if(Contraseña.getText().equals("Contraseña")){
+            Contraseña.setText(null);
+            Contraseña.requestFocus();
+            Contraseña.setEchoChar('*');
+            Estilos.removePlaceholderStyle(Contraseña);            
+        }
+    }//GEN-LAST:event_ContraseñaFocusGained
+
+    private void ContraseñaFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_ContraseñaFocusLost
+        if(Contraseña.getText().length()==0){
+            Estilos.addPlaceholderStyle(Contraseña);
+            Contraseña.setText("Contraseña");
+            //jPasswordField2.setEchoChar('*');
+        }
+    }//GEN-LAST:event_ContraseñaFocusLost
 
 private void resetFormulario() {
     // Restablecer los campos del formulario

@@ -26,9 +26,9 @@ import java.util.logging.Logger;
 
 
 public class Conexion_DB {
-    private static final String URL = "jdbc:mysql://localhost:3307/ingsoftware";
+    private static final String URL = "jdbc:mysql://localhost:3306/ingsoftware";
     private static final String USUARIO = "root";
-    private static final String CONTRASENA = "123456"; // Asume que no hay contraseña configurada
+    private static final String CONTRASENA = "Zanahoria69"; // Asume que no hay contraseña configurada
 
     // Logger para registrar información y errores
     private static final Logger LOGGER = Logger.getLogger(Conexion_DB.class.getName());

@@ -332,7 +332,7 @@ private Usuario obtenerUsuarioLogueado() {
             fieldPass.setText(null);
             fieldPass.requestFocus();
             fieldPass.setEchoChar('*');
-            Estilos.removePlaceholderStyle(fieldUser);
+            Estilos.removePlaceholderStyle(fieldPass);
             //jPasswordField2.setEchoChar('\u0000');
             
         }

@@ -14,11 +14,11 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.table.TableCellEditor;
 
-public class ButtonEditor extends AbstractCellEditor implements TableCellEditor {
+public class buttonEditor extends AbstractCellEditor implements TableCellEditor {
     JButton button;
     private String label;
 
-    public ButtonEditor(String text) {
+    public buttonEditor(String text) {
         button = new JButton();
         button.setOpaque(true);
         button.addActionListener(e -> fireEditingStopped());
