@@ -18,8 +18,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class MandarCorreos {
-    private static final String emailFrom = "bryosmar04@gmail.com";
-    private static final String passwordFrom = "sxwe ymce wawm akkb";
+    private static final String emailFrom = "luisrodriguez271103@gmail.com";
+    private static final String passwordFrom = "viwx ljfd gsec wbxt";
     private Properties properties;
     private Session session;
     

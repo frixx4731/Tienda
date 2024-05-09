@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
@@ -33,7 +34,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.MenuElement;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -56,8 +60,11 @@ public class Venta extends javax.swing.JFrame {
 
     private List<Producto> listaProductosConArea;
     private List<Producto> listaFiltrada = new ArrayList<>(); // Lista que refleja los productos filtrados
-
     
+    private double sin;
+    private double con;
+    private double ivaa;
+        
     public Venta() {
         initComponents();
         
@@ -128,7 +135,31 @@ public class Venta extends javax.swing.JFrame {
             }
         });
 
+        TablaCobro.getModel().addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 1) {
+                    // Calcular el total cuando se actualiza la columna de unidades
+                    int fila = e.getFirstRow();
+                    //int unidades = (int) TablaCobro.getValueAt(fila, 1);
+                    int unidades = Integer.parseInt(TablaCobro.getValueAt(fila, 1).toString());
 
+                    double precio = (double) TablaCobro.getValueAt(fila, 3);
+                    double total = unidades * precio;
+                    TablaCobro.setValueAt(total, fila, 4); 
+                    
+                    TableModel m = TablaCobro.getModel();
+                    actualizarTotal(m);
+                    s.setText("" + quitarIVA(con));
+                    ivaa = con - sin;
+                    i.setText("" + ivaa);
+                    t.setText("" + con);
+                }else{
+                    TableModel m = TablaCobro.getModel();
+                    //actualizarTotal(m, s);
+                }
+            }
+        });
 
     
     }
@@ -153,20 +184,20 @@ public class Venta extends javax.swing.JFrame {
     
     
     
-private void ajustarAlturaComponentes() {
-    int filaAltura = TablaBusqueda.getRowHeight();
-    int numFilas = TablaBusqueda.getRowCount();
-    int altura = filaAltura * numFilas + 24; // Asumiendo que el header tiene un alto de 24px
+    private void ajustarAlturaComponentes() {
+        int filaAltura = TablaBusqueda.getRowHeight();
+        int numFilas = TablaBusqueda.getRowCount();
+        int altura = filaAltura * numFilas + 24; // Asumiendo que el header tiene un alto de 24px
 
-    if (numFilas > 5) {
-        altura = filaAltura * 5 + 24; // Limita la altura si hay muchas filas
+        if (numFilas > 5) {
+            altura = filaAltura * 5 + 24; // Limita la altura si hay muchas filas
+        }
+
+        jScrollPane2.setPreferredSize(new Dimension(jScrollPane2.getWidth(), altura));
+        jPanel6.setPreferredSize(new Dimension(jPanel6.getWidth(), altura + 10)); // Un poco más grande para acomodar márgenes
+        jPanel6.revalidate(); // Revalida el layout para aplicar cambios de tamaño
+        jPanel6.repaint(); // Redibuja el panel
     }
-
-    jScrollPane2.setPreferredSize(new Dimension(jScrollPane2.getWidth(), altura));
-    jPanel6.setPreferredSize(new Dimension(jPanel6.getWidth(), altura + 10)); // Un poco más grande para acomodar márgenes
-    jPanel6.revalidate(); // Revalida el layout para aplicar cambios de tamaño
-    jPanel6.repaint(); // Redibuja el panel
-}
     
 
 
@@ -175,73 +206,70 @@ private void ajustarAlturaComponentes() {
 
 
 
-private void initProductosConArea() {
-    try {
-        CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
-        listaProductosConArea = dao.obtenerProductosConNombreArea(); // Carga inicial de productos
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
-    }
-}
-
-private void filtrarTablaPorTexto(String texto) {
-    DefaultTableModel model = (DefaultTableModel) TablaBusqueda.getModel();
-    model.setRowCount(0); // Limpia la tabla primero
-    listaFiltrada.clear(); // Limpia la lista filtrada
-
-    // Filtra la lista basado en el texto ingresado y actualiza la tabla
-    for (Producto prod : listaProductosConArea) {
-        if (prod.getNombre().toLowerCase().contains(texto.toLowerCase()) || prod.getCodigoBarras().toLowerCase().contains(texto.toLowerCase())) {
-            model.addRow(new Object[]{
-                prod.getCodigoBarras(),
-                prod.getNombre(),
-                prod.getMarca(),
-                prod.getPrecio(),
-                prod.getUnidadesDisponibles(),
-                prod.getContenido(),
-                prod.getNombreArea()
-            });
-            listaFiltrada.add(prod); // Añade al producto a la lista filtrada
+    private void initProductosConArea() {
+        try {
+            CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+            listaProductosConArea = dao.obtenerProductosConNombreArea(); // Carga inicial de productos
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
     }
-}
 
-private void agregarProductoACobroYCerrarTabla() {
-    int selectedRow = TablaBusqueda.getSelectedRow();
-    if (selectedRow != -1) {
-        Producto selectedProduct = listaFiltrada.get(selectedRow); // Usa lista filtrada
-        DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
-        
-        // Preparar los datos del producto seleccionado
-        modelCobro.insertRow(0, new Object[]{
-            selectedProduct.getCodigoBarras(),
-            selectedProduct.getNombre(),
-            selectedProduct.getMarca(),
-            selectedProduct.getUnidadesDisponibles(),
-            selectedProduct.getContenido(),
-            selectedProduct.getNombreArea(),
-            selectedProduct.getPrecio()
-        });
-        
-       // Asegura que la nueva fila sea visible en la parte superior
-        TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
-        
-        // Asegurarse de que el JScrollPane muestra la fila recién insertada en la parte superior
-        TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
-        
-        jPanel6.setVisible(false); // Oculta jPanel6 al seleccionar un producto
+    private void filtrarTablaPorTexto(String texto) {
+        DefaultTableModel model = (DefaultTableModel) TablaBusqueda.getModel();
+        model.setRowCount(0); // Limpia la tabla primero
+        listaFiltrada.clear(); // Limpia la lista filtrada
+
+        // Filtra la lista basado en el texto ingresado y actualiza la tabla
+        for (Producto prod : listaProductosConArea) {
+            if (prod.getNombre().toLowerCase().contains(texto.toLowerCase()) || prod.getCodigoBarras().toLowerCase().contains(texto.toLowerCase())) {
+                model.addRow(new Object[]{
+                    prod.getCodigoBarras(),
+                    prod.getNombre(),
+                    prod.getMarca(),
+                    prod.getPrecio(),
+                    prod.getUnidadesDisponibles(),
+                    prod.getContenido(),
+                    prod.getNombreArea()
+                });
+                listaFiltrada.add(prod); // Añade al producto a la lista filtrada
+            }
+        }
     }
-}
 
+    private void agregarProductoACobroYCerrarTabla() {
+        int selectedRow = TablaBusqueda.getSelectedRow();
+        if (selectedRow != -1) {
+            Producto selectedProduct = listaFiltrada.get(selectedRow); // Usa lista filtrada
+            DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
+
+            // Preparar los datos del producto seleccionado
+            modelCobro.insertRow(0, new Object[]{
+                selectedProduct.getCodigoBarras(),
+                1,
+                selectedProduct.getNombre(),
+                selectedProduct.getPrecio(),
+                precio(1, selectedProduct.getPrecio())
+            });
+
+           // Asegura que la nueva fila sea visible en la parte superior
+            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+
+            // Asegurarse de que el JScrollPane muestra la fila recién insertada en la parte superior
+            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+
+            jPanel6.setVisible(false); // Oculta jPanel6 al seleccionar un producto
+        }
+    }
+    
+    public double precio(int u, double p){
+        double t = u * p;
+        return t;
+    }
 
     
-    
-    
-    
-
-    
-    
+       
     public void setVentanaPrincipal(Principal2_0 principal) {
         this.ventanaPrincipal = principal;
     }
@@ -284,6 +312,9 @@ private void agregarProductoACobroYCerrarTabla() {
         desc = new javax.swing.JLabel();
         total = new javax.swing.JLabel();
         iva = new javax.swing.JLabel();
+        s = new javax.swing.JLabel();
+        t = new javax.swing.JLabel();
+        i = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         Busqueda = new javax.swing.JTextField();
@@ -302,9 +333,6 @@ private void agregarProductoACobroYCerrarTabla() {
 
         TablaBusqueda.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null},
-                {null, null, null, null},
-                {null, null, null, null},
                 {null, null, null, null}
             },
             new String [] {
@@ -312,7 +340,7 @@ private void agregarProductoACobroYCerrarTabla() {
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, true, false, false
+                false, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
@@ -335,11 +363,11 @@ private void agregarProductoACobroYCerrarTabla() {
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 13, Short.MAX_VALUE))
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 69, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 1, Short.MAX_VALUE))
         );
 
-        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 90, 440, 440));
+        jPanel1.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(80, 90, 440, 70));
 
         MenuPlegable.setBackground(new java.awt.Color(204, 204, 204));
         MenuPlegable.setLayout(null);
@@ -441,23 +469,33 @@ private void agregarProductoACobroYCerrarTabla() {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGap(17, 17, 17)
                 .addComponent(sub)
-                .addGap(99, 99, 99)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(s, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(18, 18, 18)
                 .addComponent(iva)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 119, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(i, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(desc)
                 .addGap(144, 144, 144)
                 .addComponent(total)
-                .addGap(62, 62, 62))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(t, javax.swing.GroupLayout.PREFERRED_SIZE, 34, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(22, 22, 22))
         );
         jPanel3Layout.setVerticalGroup(
             jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGap(16, 16, 16)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(sub)
-                    .addComponent(desc)
-                    .addComponent(total)
-                    .addComponent(iva))
+                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(i, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(t, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                        .addComponent(sub)
+                        .addComponent(desc)
+                        .addComponent(total)
+                        .addComponent(iva)
+                        .addComponent(s, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(13, Short.MAX_VALUE))
         );
 
@@ -508,10 +546,7 @@ private void agregarProductoACobroYCerrarTabla() {
         TablaCobro.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
         TablaCobro.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null},
-                {null, null, null, null, null}
+
             },
             new String [] {
                 "CODIGO", "UNIDADES", "PRODUCTO", "PRECIO UNI.", "IMPORTE"
@@ -543,15 +578,14 @@ private void agregarProductoACobroYCerrarTabla() {
                     .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel4Layout.createSequentialGroup()
                         .addGap(30, 30, 30)
-                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                             .addComponent(Busqueda, javax.swing.GroupLayout.PREFERRED_SIZE, 440, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                                .addGroup(jPanel4Layout.createSequentialGroup()
-                                    .addComponent(btnEliminar, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                    .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                    .addComponent(btnCobro, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 730, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                            .addGroup(jPanel4Layout.createSequentialGroup()
+                                .addComponent(btnEliminar, javax.swing.GroupLayout.PREFERRED_SIZE, 103, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(490, 490, 490)
+                                .addComponent(btnCobro, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 730, Short.MAX_VALUE)
+                            .addComponent(jPanel3, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addGap(0, 30, Short.MAX_VALUE))
         );
         jPanel4Layout.setVerticalGroup(
@@ -669,27 +703,58 @@ private void agregarProductoACobroYCerrarTabla() {
     DefaultTableModel model = (DefaultTableModel) TablaCobro.getModel();
     model.setRowCount(0); // Limpia la tabla completamente.
 
-    try {
-        CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
-        List<Producto> listaProductosConArea = dao.obtenerProductosConNombreArea(); // Obtiene la lista de productos con su área
-        
-        // Recorre la lista y añade filas al modelo de la tabla
-        for (Producto inv : listaProductosConArea) {
-            model.addRow(new Object[]{
-                inv.getCodigoBarras(),
-                inv.getNombre(),
-                inv.getMarca(),
-                inv.getUnidadesDisponibles(),
-                inv.getContenido(),
-                inv.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
-                inv.getPrecio()
-            });
+        try {
+            CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+            List<Producto> listaProductosConArea = dao.obtenerProductosConNombreArea(); // Obtiene la lista de productos con su área
+
+            // Recorre la lista y añade filas al modelo de la tabla
+            for (Producto inv : listaProductosConArea) {
+                model.addRow(new Object[]{
+                    inv.getCodigoBarras(),
+                    inv.getNombre(),
+                    inv.getMarca(),
+                    inv.getUnidadesDisponibles(),
+                    inv.getContenido(),
+                    inv.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                    inv.getPrecio()
+                });
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
-    } catch (SQLException e) {
-        JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
-        e.printStackTrace();
     }
-}
+    
+    private double quitarIVA(double p){
+        double SinIVA;
+        double ConIVA = p;
+        
+        SinIVA = ConIVA/1.16;
+        
+        return SinIVA;
+    }
+    
+    public void actualizarTotal(TableModel model/*, JLabel totalField*/) {
+        double total = 0.0;
+        int rowCount = model.getRowCount();
+        int totalColumnIndex = 4; // Índice de la columna de precios en este ejemplo
+
+//        for (int i = 0; i < rowCount; i++) {
+//            double precio = (double) model.getValueAt(i, totalColumnIndex);
+//            total += precio;
+//        }
+        for (int i = 0; i < rowCount; i++) {
+            Object valorCelda = model.getValueAt(i, totalColumnIndex);
+            if (valorCelda != null) {
+                // Verificar si el valor de la celda no es nulo
+                double precio = Double.parseDouble(valorCelda.toString());
+                total += precio;
+            }else System.out.println(""+valorCelda);
+        }
+        
+        con = total;
+        //totalField.setText(String.valueOf(total));
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField Busqueda;
@@ -699,6 +764,7 @@ private void agregarProductoACobroYCerrarTabla() {
     private javax.swing.JButton btnCobro;
     private javax.swing.JButton btnEliminar;
     private javax.swing.JLabel desc;
+    private javax.swing.JLabel i;
     private javax.swing.JLabel iva;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
@@ -715,7 +781,9 @@ private void agregarProductoACobroYCerrarTabla() {
     private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JLabel s;
     private javax.swing.JLabel sub;
+    private javax.swing.JLabel t;
     private javax.swing.JLabel total;
     // End of variables declaration//GEN-END:variables
 }
