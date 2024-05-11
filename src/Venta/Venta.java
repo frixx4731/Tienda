@@ -149,15 +149,17 @@ public class Venta extends javax.swing.JFrame {
                     TablaCobro.setValueAt(total, fila, 4); 
                     
                     TableModel m = TablaCobro.getModel();
-                    actualizarTotal(m);
-                    s.setText("" + quitarIVA(con));
+                    actualizarTotal(m); //Se le introducen datos a con
+                    sin = quitarIVA(con);
+                    s.setText("" + sin);
                     ivaa = con - sin;
+                    con = sin + ivaa;
                     i.setText("" + ivaa);
                     t.setText("" + con);
                     System.out.println("con " + con);
                     System.out.println("sin " + sin);
                 }else{
-                    TableModel m = TablaCobro.getModel();
+                    //TableModel m = TablaCobro.getModel();
                     //actualizarTotal(m, s);
                 }
             }
@@ -254,7 +256,10 @@ public class Venta extends javax.swing.JFrame {
                 selectedProduct.getPrecio(),
                 precio(1, selectedProduct.getPrecio())
             });
-
+            
+            TableModel m = TablaCobro.getModel();
+            actualizarTotal(m);
+            
            // Asegura que la nueva fila sea visible en la parte superior
             TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
 

@@ -33,11 +33,6 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="btnAgregar" min="-2" max="-2" attributes="0"/>
-                          <Group type="102" alignment="0" attributes="0">
-                              <Component id="Preguntas" min="-2" max="-2" attributes="0"/>
-                              <EmptySpace min="-2" pref="45" max="-2" attributes="0"/>
-                              <Component id="txtRespuesta" min="-2" pref="184" max="-2" attributes="0"/>
-                          </Group>
                           <Component id="Correo" alignment="0" min="-2" pref="179" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
@@ -88,12 +83,7 @@
               <Component id="nomUsuario" min="-2" pref="37" max="-2" attributes="0"/>
               <EmptySpace min="-2" pref="31" max="-2" attributes="0"/>
               <Component id="Contraseña" min="-2" pref="37" max="-2" attributes="0"/>
-              <EmptySpace min="-2" pref="36" max="-2" attributes="0"/>
-              <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="txtRespuesta" alignment="0" min="-2" pref="39" max="-2" attributes="0"/>
-                  <Component id="Preguntas" min="-2" pref="39" max="-2" attributes="0"/>
-              </Group>
-              <EmptySpace max="-2" attributes="0"/>
+              <EmptySpace min="-2" pref="81" max="-2" attributes="0"/>
               <Component id="lblmensaje" min="-2" pref="43" max="-2" attributes="0"/>
               <EmptySpace min="-2" pref="33" max="-2" attributes="0"/>
               <Component id="btnAgregar" min="-2" max="-2" attributes="0"/>
@@ -103,31 +93,6 @@
     </DimensionLayout>
   </Layout>
   <SubComponents>
-    <Component class="javax.swing.JComboBox" name="Preguntas">
-      <Properties>
-        <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-          <StringArray count="6">
-            <StringItem index="0" value="&#xbf;Cu&#xe1;l es el nombre de tu primera mascota?"/>
-            <StringItem index="1" value="&#xbf;Cu&#xe1;l es tu pel&#xed;cula favorita?"/>
-            <StringItem index="2" value="&#xbf;En qu&#xe9; ciudad naciste?"/>
-            <StringItem index="3" value="&#xbf;Cu&#xe1;l es tu libro favorito?"/>
-            <StringItem index="4" value="&#xbf;Cu&#xe1;l es tu color favorito?"/>
-            <StringItem index="5" value="&#xbf;Cu&#xe1;l era el modelo de tu primer coche?"/>
-          </StringArray>
-        </Property>
-      </Properties>
-      <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="PreguntasActionPerformed"/>
-      </Events>
-      <AuxValues>
-        <AuxValue name="JavaCodeGenerator_TypeParameters" type="java.lang.String" value="&lt;String&gt;"/>
-      </AuxValues>
-    </Component>
-    <Component class="javax.swing.JTextField" name="txtRespuesta">
-      <Events>
-        <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="txtRespuestaActionPerformed"/>
-      </Events>
-    </Component>
     <Component class="javax.swing.JLabel" name="lblmensaje">
     </Component>
     <Component class="javax.swing.JTextField" name="nomUsuario">

@@ -27,6 +27,7 @@ import Configuraciones.Configuraciones;
 import Venta.Venta;
 import Consultas.CONSULTASDAO;
 import java.awt.Color;
+import java.time.LocalDate;
 
 
 /**
@@ -39,35 +40,35 @@ public class Principal2_0 extends javax.swing.JFrame {
      * Creates new form Panel
      */
 
-   private AnimacionPanel animador; // Añade esta línea
+    private AnimacionPanel animador; // Añade esta línea
     private Usuario usuarioLogueado;
 
  
     
     
-       public Principal2_0() {
+    public Principal2_0() {
         initComponents();
                 
-         animador = new AnimacionPanel(); // Inicializa el animador
+        animador = new AnimacionPanel(); // Inicializa el animador
 
         
         configurarEncabezadosTabla();
 
-    Buscar.addKeyListener(new KeyAdapter() {
-        @Override
-        public void keyReleased(KeyEvent e) {
-            String textoBuscado = Buscar.getText().trim();
-            filtrarTablaPorTexto(textoBuscado);
-        }
-    });
+        Buscar.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                String textoBuscado = Buscar.getText().trim();
+                filtrarTablaPorTexto(textoBuscado);
+            }
+        });
 
-    initProductosConArea();
+        initProductosConArea();
     
-    Venta.addMouseListener(new java.awt.event.MouseAdapter() {
-    public void mouseClicked(java.awt.event.MouseEvent evt) {
-        VentaMouseClicked(evt);
-    }
-});
+        Venta.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                VentaMouseClicked(evt);
+            }
+    });
 
     }
     
@@ -211,15 +212,47 @@ private void actualizarTablaInventario() {
 
         // Recorre la lista y añade filas al modelo de la tabla
         for (Producto prod : listaProductosConArea) {
-            model.addRow(new Object[]{
-                prod.getCodigoBarras(),
-                prod.getNombre(),
-                prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
-                prod.getUnidadesDisponibles(),
-                prod.getContenido(), // Verifica que este dato se desea mostrar
-                prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
-                prod.getPrecio()
-            });
+            LocalDate fechaa = prod.getFechaCaducidad();
+            LocalDate unMesAntes = fechaa.minusMonths(1);
+            LocalDate actual = LocalDate.now();
+            
+            if(prod.getUnidadesDisponibles()>20){
+                if(actual.getYear()<= fechaa.getYear() && fechaa.getMonthValue() > actual.getMonthValue()){
+                    model.addRow(new Object[]{
+                        prod.getCodigoBarras(),
+                        prod.getNombre(),
+                        prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                        prod.getUnidadesDisponibles(),
+                        prod.getContenido(), // Verifica que este dato se desea mostrar
+                        prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                        prod.getPrecio()
+                    });
+                }else{
+                    model.addRow(new Object[]{
+                        prod.getCodigoBarras(),
+                        prod.getNombre(),
+                        prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                        prod.getUnidadesDisponibles(),
+                        prod.getContenido(), // Verifica que este dato se desea mostrar
+                        prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                        prod.getPrecio()
+                    });
+                    
+                    System.out.println("Se sugiere poner en oferta el producto " + prod.getNombre() + ", con fecha de caducidad " + prod.getFechaCaducidad());
+                }
+            }else{
+                model.addRow(new Object[]{
+                    prod.getCodigoBarras(),
+                    prod.getNombre(),
+                    prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                    prod.getUnidadesDisponibles(),
+                    prod.getContenido(), // Verifica que este dato se desea mostrar
+                    prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                    prod.getPrecio()
+                });
+                System.out.println("Reabastecer " + prod.getNombre());
+            }
+            
         }
     } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
@@ -521,19 +554,50 @@ private void actualizarTablaInventario() {
     model.setRowCount(0); // Limpia la tabla completamente.
 
     try {
-         CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+        CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
         List<Producto> productosFiltrados = dao.obtenerProductosPorArea(area); // Implementar este método
         
-        for (Producto p : productosFiltrados) {
-            model.addRow(new Object[]{
-                p.getCodigoBarras(),
-                p.getNombre(),
-                p.getMarca(),
-                p.getUnidadesDisponibles(),
-                p.getContenido(),
-                p.getNombreArea(),
-                p.getPrecio()
-            });
+        for (Producto prod : listaProductosConArea) {
+            LocalDate fechaa = prod.getFechaCaducidad();
+            LocalDate unMesAntes = fechaa.minusMonths(1);
+            LocalDate startDate = LocalDate.now();
+            if(prod.getUnidadesDisponibles()>20){
+                if( startDate.getYear()<= unMesAntes.getYear() && fechaa.getMonthValue() > startDate.getMonthValue()){
+                    model.addRow(new Object[]{
+                        prod.getCodigoBarras(),
+                        prod.getNombre(),
+                        prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                        prod.getUnidadesDisponibles(),
+                        prod.getContenido(), // Verifica que este dato se desea mostrar
+                        prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                        prod.getPrecio()
+                    });
+                }else{
+                    model.addRow(new Object[]{
+                        prod.getCodigoBarras(),
+                        prod.getNombre(),
+                        prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                        prod.getUnidadesDisponibles(),
+                        prod.getContenido(), // Verifica que este dato se desea mostrar
+                        prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                        prod.getPrecio()
+                    });
+                    
+                    System.out.println("Se sugiere poner en oferta el producto " + prod.getNombre());
+                }
+            }else{
+                model.addRow(new Object[]{
+                    prod.getCodigoBarras(),
+                    prod.getNombre(),
+                    prod.getMarca(), // Asumiendo que tienes un getter getMarca en la clase Producto
+                    prod.getUnidadesDisponibles(),
+                    prod.getContenido(), // Verifica que este dato se desea mostrar
+                    prod.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
+                    prod.getPrecio()
+                });
+                System.out.println("Reabastecer " + prod.getNombre());
+            }
+            
         }
   } catch (SQLException e) {
         JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(),

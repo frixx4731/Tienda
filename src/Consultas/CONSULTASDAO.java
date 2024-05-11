@@ -241,15 +241,11 @@ public List<Producto> obtenerProductosPorArea(String areaNombre) throws SQLExcep
     
      // Método para crear un nuevo empleado
 public boolean crearEmpleado(String nombreUsuario, String contraseñaHasheada, Usuario.Rol rol,
-                             ArrayList<String> preguntas, ArrayList<String> respuestas,
                              String correo, String nombre, String apellido) {
     
     String nombreCompleto = nombre + " " + apellido;
-    String preguntasConcatenadas = String.join("|", preguntas);
-    String respuestasConcatenadas = String.join("|", respuestas);
-
-           String sql = "INSERT INTO Usuario (NombreUsuario, Contraseña, Rol, Email, NombreCompleto, PreguntaSeguridad, RespuestaSeguridad) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?)";
+    String sql = "INSERT INTO Usuario (NombreUsuario, Contraseña, Rol, Email, NombreCompleto) " +
+                 "VALUES (?, ?, ?, ?, ?)";
 
     try (PreparedStatement pstmt = con.prepareStatement(sql)) {
             pstmt.setString(1, nombreUsuario);
@@ -257,8 +253,7 @@ public boolean crearEmpleado(String nombreUsuario, String contraseñaHasheada, U
             pstmt.setString(3, rol.name());
             pstmt.setString(4, correo);
             pstmt.setString(5, nombreCompleto);
-            pstmt.setString(6, preguntasConcatenadas);
-            pstmt.setString(7, respuestasConcatenadas);
+            
 
 
         int affectedRows = pstmt.executeUpdate();
@@ -322,9 +317,7 @@ public String obtenerContraseñaHashPorRol(String rol) {
                         String nombreCompleto = rs.getString("NombreCompleto");
                         String rolString = rs.getString("Rol");
                         LocalDateTime ultimoLogin = rs.getTimestamp("UltimoLogin") != null ? rs.getTimestamp("UltimoLogin").toLocalDateTime() : null;
-                        String preguntaSeguridad = rs.getString("PreguntaSeguridad");
-                        String respuestaSeguridad = rs.getString("RespuestaSeguridad");
-
+                        
                         Usuario usuario = new Usuario(
                             usuarioID, 
                             nombreUsuario, 
@@ -334,9 +327,6 @@ public String obtenerContraseñaHashPorRol(String rol) {
                             nombreCompleto, 
                             ultimoLogin
                         );
-                        usuario.setPreguntaSeguridad(preguntaSeguridad);
-                        usuario.setRespuestaSeguridad(respuestaSeguridad);
-
                         return usuario;
                     }
                 }

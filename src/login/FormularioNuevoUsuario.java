@@ -26,27 +26,17 @@ public class FormularioNuevoUsuario extends javax.swing.JFrame {
      * Creates new form FormularioNuevoUsuario
      */
     private String rolSeleccionado;
-    private ArrayList<String> preguntasSeleccionadas = new ArrayList<>();
     private ArrayList<String> respuestasDadas = new ArrayList<>();
-    private int contadorDeRespuestas = 0;
-      
+    
 
     public FormularioNuevoUsuario(String rol) {
        this.rolSeleccionado = rol; // Establece el rol para el formulario
         initComponents();
         lblRoles.setText(rolSeleccionado); // Muestra el rol en la etiqueta
         
-       Preguntas.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                PreguntasActionPerformed(evt);
-            }
-        });
+       
       // Y para txtRespuesta así:
-        txtRespuesta.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtRespuestaActionPerformed(evt);
-            }
-        });
+        
 
         AbrirVentana();
         
@@ -92,8 +82,6 @@ private void cerrarYVolverAConfiguraciones() {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        Preguntas = new javax.swing.JComboBox<>();
-        txtRespuesta = new javax.swing.JTextField();
         lblmensaje = new javax.swing.JLabel();
         nomUsuario = new javax.swing.JTextField();
         btnAgregar = new javax.swing.JButton();
@@ -104,19 +92,6 @@ private void cerrarYVolverAConfiguraciones() {
         Contraseña = new javax.swing.JPasswordField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-
-        Preguntas.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "¿Cuál es el nombre de tu primera mascota?", "¿Cuál es tu película favorita?", "¿En qué ciudad naciste?", "¿Cuál es tu libro favorito?", "¿Cuál es tu color favorito?", "¿Cuál era el modelo de tu primer coche?" }));
-        Preguntas.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                PreguntasActionPerformed(evt);
-            }
-        });
-
-        txtRespuesta.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtRespuestaActionPerformed(evt);
-            }
-        });
 
         nomUsuario.setText("Nombre de usuario");
         nomUsuario.addFocusListener(new java.awt.event.FocusAdapter() {
@@ -191,10 +166,6 @@ private void cerrarYVolverAConfiguraciones() {
                         .addContainerGap()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(btnAgregar)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(Preguntas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(45, 45, 45)
-                                .addComponent(txtRespuesta, javax.swing.GroupLayout.PREFERRED_SIZE, 184, javax.swing.GroupLayout.PREFERRED_SIZE))
                             .addComponent(Correo, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE))
                         .addGap(0, 0, Short.MAX_VALUE)))
                 .addContainerGap())
@@ -232,11 +203,7 @@ private void cerrarYVolverAConfiguraciones() {
                 .addComponent(nomUsuario, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(31, 31, 31)
                 .addComponent(Contraseña, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(36, 36, 36)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txtRespuesta, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(Preguntas, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGap(81, 81, 81)
                 .addComponent(lblmensaje, javax.swing.GroupLayout.PREFERRED_SIZE, 43, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(33, 33, 33)
                 .addComponent(btnAgregar)
@@ -245,35 +212,6 @@ private void cerrarYVolverAConfiguraciones() {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-
-    private void PreguntasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PreguntasActionPerformed
-         lblmensaje.setText("");
-    txtRespuesta.setText("");
-    }//GEN-LAST:event_PreguntasActionPerformed
-
-    private void txtRespuestaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtRespuestaActionPerformed
- // Obtén la respuesta y la pregunta seleccionada
-    String respuesta = txtRespuesta.getText().trim();
-    String pregunta = (String) Preguntas.getSelectedItem();
-    
-    // Validación simple para asegurarse de que se ingresa una respuesta
-    if (!respuesta.isEmpty() && !preguntasSeleccionadas.contains(pregunta)) {
-        // Añade la pregunta y respuesta a las listas
-        preguntasSeleccionadas.add(pregunta);
-        respuestasDadas.add(respuesta);
-        contadorDeRespuestas++;
-        
-        lblmensaje.setText("Respuesta " + contadorDeRespuestas + " guardada");
-        txtRespuesta.setText(""); // Limpia el campo de respuesta
-        
-        // Si ya se han seleccionado 3 preguntas, podrías desactivar el JComboBox
-        if (contadorDeRespuestas == 3) {
-            Preguntas.setEnabled(false);
-        }
-    } else {
-        lblmensaje.setText("Pregunta guardada, selecciona otra pregunta");
-    }
-    }//GEN-LAST:event_txtRespuestaActionPerformed
 
     private void btnAgregarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnAgregarActionPerformed
      // Obtener valores de los campos de texto
@@ -303,7 +241,7 @@ private void cerrarYVolverAConfiguraciones() {
         return;
     }
     // Verifica que se hayan respondido 3 preguntas
-    if (camposValidos && contadorDeRespuestas == 3) {
+    if (camposValidos) {
         try {
             // Hashea la contraseña antes de enviarla a la base de datos
             String contraseñaHasheada = HashingUtil.hashPassword(contraseñaPlana);
@@ -316,7 +254,7 @@ private void cerrarYVolverAConfiguraciones() {
             
             // El método crearEmpleado ahora también incluye correo, nombre y apellido
             Usuario.Rol rolEnum = Usuario.Rol.valueOf(rolSeleccionado.toUpperCase());
-boolean exito = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, preguntasSeleccionadas, respuestasDadas, correo, nombre, apellido);
+            boolean exito = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, correo, nombre, apellido);
 
           
             
@@ -335,11 +273,8 @@ boolean exito = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, pregunt
         }
     } else {
         // Mensajes específicos para cada tipo de error de validación
-        if (contadorDeRespuestas != 3) {
-            JOptionPane.showMessageDialog(this, "Por favor, responda a las 3 preguntas de seguridad.");
-        } else {
-            JOptionPane.showMessageDialog(this, "Por favor complete todos los campos requeridos.");
-        }
+        JOptionPane.showMessageDialog(this, "Por favor complete todos los campos requeridos.");
+        
     }
     AbrirVentana();
     }//GEN-LAST:event_btnAgregarActionPerformed
@@ -428,12 +363,7 @@ private void resetFormulario() {
     Contraseña.setText("");
     Correo.setText("");
     Nombre.setText("");
-    Apellido.setText("");
-    contadorDeRespuestas = 0;
-    preguntasSeleccionadas.clear();
-    respuestasDadas.clear();
-    Preguntas.setSelectedIndex(0);  // Resetear la selección de preguntas
-    txtRespuesta.setText("");       // Limpiar campo de respuesta
+    Apellido.setText("");    
     lblmensaje.setText("");         // Limpiar mensajes de respuesta
     // Restablecer los colores de las etiquetas a negro
 //    lblUsuario.setForeground(Color.BLACK);
@@ -452,11 +382,9 @@ private void resetFormulario() {
     private javax.swing.JPasswordField Contraseña;
     private javax.swing.JTextField Correo;
     private javax.swing.JTextField Nombre;
-    private javax.swing.JComboBox<String> Preguntas;
     private javax.swing.JButton btnAgregar;
     private javax.swing.JLabel lblRoles;
     private javax.swing.JLabel lblmensaje;
     private javax.swing.JTextField nomUsuario;
-    private javax.swing.JTextField txtRespuesta;
     // End of variables declaration//GEN-END:variables
 }

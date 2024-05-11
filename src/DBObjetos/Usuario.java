@@ -18,8 +18,6 @@ public class Usuario {
     private String email;
     private String nombreCompleto;
     private LocalDateTime ultimoLogin;
-    private String preguntaSeguridad;
-    private String respuestaSeguridad;
 
     
     
@@ -104,21 +102,9 @@ public enum Rol {
         this.ultimoLogin = ultimoLogin;
     }
 
-        public String getPreguntaSeguridad() {
-        return preguntaSeguridad;
-    }
+        
 
-    public void setPreguntaSeguridad(String preguntaSeguridad) {
-        this.preguntaSeguridad = preguntaSeguridad;
-    }
-
-    public String getRespuestaSeguridad() {
-        return respuestaSeguridad;
-    }
-
-    public void setRespuestaSeguridad(String respuestaSeguridad) {
-        this.respuestaSeguridad = respuestaSeguridad;
-    }
+    
     // toString
     @Override
     public String toString() {
