@@ -254,7 +254,8 @@ private void cerrarYVolverAConfiguraciones() {
             
             // El método crearEmpleado ahora también incluye correo, nombre y apellido
             Usuario.Rol rolEnum = Usuario.Rol.valueOf(rolSeleccionado.toUpperCase());
-            boolean exito = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, correo, nombre, apellido);
+            boolean exito = dao.crearEmpleadosinToken(usuario, contraseñaHasheada, rolEnum, correo, nombre, apellido);
+            //boolean exi = dao.crearEmpleado(usuario, contraseñaHasheada, rolEnum, contraseñaPlana, correo, nombre, apellido);
 
           
             

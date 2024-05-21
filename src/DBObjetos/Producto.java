@@ -19,14 +19,15 @@ public class Producto {
     private int unidadesDisponibles;
     private int nivelReorden;
     private LocalDate fechaCaducidad;
-    private String codigoBarras;
+    private int codigoBarras;
     private String tamañoNeto;
     private String marca;
     private String contenido;
     private String nombreArea; // Nuevo campo para el nombre del área
+    private int cantidad;  // Campo adicional para la cantidad
 
     // Constructor
-    public Producto(int productoID, String nombre, String descripcion, int areaID, double precio, int unidadesDisponibles, int nivelReorden, LocalDate fechaCaducidad, String codigoBarras, String tamañoNeto, String marca, String contenido, String nombreArea) {
+    public Producto(int productoID, String nombre, String descripcion, int areaID, double precio, int unidadesDisponibles, int nivelReorden, LocalDate fechaCaducidad, int codigoBarras, String tamañoNeto, String marca, String contenido, String nombreArea,int cantidad) {
         this.productoID = productoID;
         this.nombre = nombre;
         this.descripcion = descripcion;
@@ -40,9 +41,13 @@ public class Producto {
         this.marca = marca;
         this.contenido = contenido;
         this.nombreArea = nombreArea; // Inicializar el nombre del área
+        this.cantidad = cantidad;  // Inicializa la cantidad
 
     }
 
+    public Producto(){ 
+    }
+    
     // Getters
 
         public String getNombreArea() {
@@ -86,7 +91,7 @@ public LocalDate getFechaCaducidad() {
     return fechaCaducidad;
 }
 
-public String getCodigoBarras() {
+public int getCodigoBarras() {
     return codigoBarras;
 }
 
@@ -102,6 +107,11 @@ public String getContenido() {
     return contenido;
 }
 
+
+    public int getCantidad() { 
+        return cantidad; 
+    }
+    
 // Setters
 public void setProductoID(int productoID) {
     this.productoID = productoID;
@@ -135,7 +145,7 @@ public void setFechaCaducidad(LocalDate fechaCaducidad) {
     this.fechaCaducidad = fechaCaducidad;
 }
 
-public void setCodigoBarras(String codigoBarras) {
+public void setCodigoBarras(int codigoBarras) {
     this.codigoBarras = codigoBarras;
 }
 
@@ -150,6 +160,11 @@ public void setMarca(String marca) {
 public void setContenido(String contenido) {
     this.contenido = contenido;
 }
+
+    public void setCantidad(int cantidad) { 
+        this.cantidad = cantidad; 
+    }
+
 
     // toString
     @Override
@@ -167,7 +182,8 @@ public void setContenido(String contenido) {
                 ", tamañoNeto='" + tamañoNeto + '\'' +
                 ", marca='" + marca + '\'' +
                 ", contenido='" + contenido + '\'' +
-                 ", nombreArea='" + nombreArea + '\'' +
+                ", nombreArea='" + nombreArea + '\'' +
+                ", cantidad=" + cantidad +
                 '}';
     }
 }

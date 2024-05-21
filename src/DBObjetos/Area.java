@@ -23,6 +23,9 @@ public class Area  {
         this.descripcion = descripcion;
     }
   
+  public Area() {
+
+}
     // Getters
     // Getters
     public int getAreaID() {
@@ -51,6 +54,7 @@ public class Area  {
     }
 
     // toString
+    
     @Override
     public String toString() {
         return "Area{" +
@@ -59,4 +63,5 @@ public class Area  {
                 ", descripcion='" + descripcion + '\'' +
                 '}';
     }
+
 }

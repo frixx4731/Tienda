@@ -392,7 +392,7 @@ private void ajustarTamanioColumnasYFilas() {
             // Verifica la llave maestra para cualquier rol con permiso si el usuario a crear es EMPLEADO
             if ("EMPLEADO".equals(rolSeleccionado)) {
                 for (String rol : new String[]{"ADMINISTRADOR", "GERENTE", "SUPERVISOR"}) {
-                    String contraseñaHasheadaAlmacenada = productoDAO.obtenerContraseñaHashPorRol(rol);
+                    String contraseñaHasheadaAlmacenada = productoDAO.obtenerContraseñaTokenPorRol(rol);
                     if (contraseñaHasheadaIngresada.equals(contraseñaHasheadaAlmacenada)) {
                         esValido = true;
                         break;  // Sale del bucle si encuentra una coincidencia
@@ -400,7 +400,7 @@ private void ajustarTamanioColumnasYFilas() {
                 }
             }else {
                 // Para los roles ADMINISTRADOR, GERENTE y SUPERVISOR, verifica la llave maestra directamente
-                String contraseñaHasheadaAlmacenada = productoDAO.obtenerContraseñaHashPorRol(rolSeleccionado);
+                String contraseñaHasheadaAlmacenada = productoDAO.obtenerContraseñaTokenPorRol(rolSeleccionado);
                 esValido = contraseñaHasheadaIngresada != null && contraseñaHasheadaIngresada.equals(contraseñaHasheadaAlmacenada);
             }
 

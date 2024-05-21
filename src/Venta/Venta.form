@@ -401,17 +401,17 @@
                           <EmptySpace min="-2" pref="17" max="-2" attributes="0"/>
                           <Component id="sub" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="s" min="-2" pref="65" max="-2" attributes="0"/>
+                          <Component id="lblSubtotal" min="-2" pref="65" max="-2" attributes="0"/>
                           <EmptySpace type="separate" max="-2" attributes="0"/>
                           <Component id="iva" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="i" min="-2" pref="80" max="-2" attributes="0"/>
+                          <Component id="lblIva" min="-2" pref="80" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
                           <Component id="desc" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="144" max="-2" attributes="0"/>
                           <Component id="total" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="t" min="-2" pref="50" max="-2" attributes="0"/>
+                          <Component id="lblTotal" min="-2" pref="50" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
@@ -421,14 +421,14 @@
                       <Group type="102" alignment="0" attributes="0">
                           <EmptySpace min="-2" pref="16" max="-2" attributes="0"/>
                           <Group type="103" groupAlignment="0" attributes="0">
-                              <Component id="i" min="-2" pref="19" max="-2" attributes="0"/>
-                              <Component id="t" min="-2" pref="19" max="-2" attributes="0"/>
+                              <Component id="lblIva" min="-2" pref="19" max="-2" attributes="0"/>
+                              <Component id="lblTotal" min="-2" pref="19" max="-2" attributes="0"/>
                               <Group type="103" groupAlignment="3" attributes="0">
                                   <Component id="sub" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="desc" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="total" alignment="3" min="-2" max="-2" attributes="0"/>
                                   <Component id="iva" alignment="3" min="-2" max="-2" attributes="0"/>
-                                  <Component id="s" alignment="3" min="-2" pref="19" max="-2" attributes="0"/>
+                                  <Component id="lblSubtotal" alignment="3" min="-2" pref="19" max="-2" attributes="0"/>
                               </Group>
                           </Group>
                           <EmptySpace pref="13" max="32767" attributes="0"/>
@@ -469,11 +469,11 @@
                     <Property name="text" type="java.lang.String" value="I.V.A.:   $"/>
                   </Properties>
                 </Component>
-                <Component class="javax.swing.JLabel" name="s">
+                <Component class="javax.swing.JLabel" name="lblSubtotal">
                 </Component>
-                <Component class="javax.swing.JLabel" name="t">
+                <Component class="javax.swing.JLabel" name="lblTotal">
                 </Component>
-                <Component class="javax.swing.JLabel" name="i">
+                <Component class="javax.swing.JLabel" name="lblIva">
                 </Component>
               </SubComponents>
             </Container>
@@ -548,7 +548,8 @@
                       </Border>
                     </Property>
                     <Property name="model" type="javax.swing.table.TableModel" editor="org.netbeans.modules.form.editors2.TableModelEditor">
-                      <Table columnCount="5" rowCount="0">
+                      <Table columnCount="6" rowCount="0">
+                        <Column editable="true" title="PRODUCTOID" type="java.lang.Object"/>
                         <Column editable="false" title="CODIGO" type="java.lang.Object"/>
                         <Column editable="true" title="UNIDADES" type="java.lang.Object"/>
                         <Column editable="false" title="PRODUCTO" type="java.lang.Object"/>
@@ -558,6 +559,11 @@
                     </Property>
                     <Property name="columnModel" type="javax.swing.table.TableColumnModel" editor="org.netbeans.modules.form.editors2.TableColumnModelEditor">
                       <TableColumnModel selectionModel="0">
+                        <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
+                          <Title value="PRODUCTOID"/>
+                          <Editor/>
+                          <Renderer/>
+                        </Column>
                         <Column maxWidth="-1" minWidth="-1" prefWidth="-1" resizable="true">
                           <Title/>
                           <Editor/>
@@ -589,6 +595,9 @@
                       <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
                     </Property>
                   </Properties>
+                  <Events>
+                    <EventHandler event="keyPressed" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="TablaCobroKeyPressed"/>
+                  </Events>
                 </Component>
               </SubComponents>
             </Container>

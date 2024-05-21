@@ -19,23 +19,6 @@ import java.util.logging.Level;
  * @author Luis
  */
 public class NewClass {
-       
-//   public static void main(String[] args) {
-//        // Fecha de inicio (hoy)
-//        LocalDate startDate = LocalDate.now();
-//
-//        // Generar y mostrar 5 fechas de caducidad aleatorias
-//        for (int i = 0; i < 10; i++) {
-//            LocalDate expirationDate = generateRandomExpirationDate(startDate, 365);  // 365 días = 1 año
-//            System.out.println("Fecha de caducidad #" + (i + 1) + ": " + expirationDate);
-//        }
-//    }
-//
-//    private static LocalDate generateRandomExpirationDate(LocalDate start, int days) {
-//        Random random = new Random();
-//        long randomDays = random.nextInt(days);  // Generar un número aleatorio de días dentro del rango
-//        return start.plus(randomDays, ChronoUnit.DAYS);
-//    }
 
     private static final Logger LOGGER = Logger.getLogger(Conexion_DB.class.getName());
 

@@ -4,40 +4,28 @@ package Venta;
 import ConexionDB.Conexion_DB;
 import Configuraciones.Estilos;
 import Consultas.CONSULTASDAO;
-import DBObjetos.Inventario;
 import DBObjetos.Producto;
+import DBObjetos.Usuario;
 import INVENTARIO.Principal2_0;
 import INVENTARIO.AnimacionPanel;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.MenuElement;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
+import login.SesionManager;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -64,6 +52,8 @@ public class Venta extends javax.swing.JFrame {
     private double sin;
     private double con;
     private double ivaa;
+    
+    double totaal;
         
     public Venta() {
         initComponents();
@@ -135,39 +125,130 @@ public class Venta extends javax.swing.JFrame {
             }
         });
 
-        TablaCobro.getModel().addTableModelListener(new TableModelListener() {
+
+
+        
+            // Configura el listener para la tabla TablaCobro
+    TablaCobro.getModel().addTableModelListener(new TableModelListener() {
+        @Override
+        public void tableChanged(TableModelEvent e) {
+            // Se asegura de reaccionar solo a cambios relevantes en los datos
+            if (e.getType() == TableModelEvent.UPDATE) {
+                CalcularTotales();
+            }
+        }
+    });
+
+    TablaCobro.removeColumn(TablaCobro.getColumnModel().getColumn(0));    // Ocultar la columna PRODUCTOID visualmente, pero sigue estando en el modelo
+   
+    inicializarTablaCobro();
+    
+    
+    cargarProductosConAjusteDePrecio();
+    
+    }
+    
+
+
+
+    private void cargarProductosConAjusteDePrecio() {
+        try {
+            CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+            Map<Integer, Double> porcentajes = dao.obtenerPorcentajesGanancia();
+            listaProductosConArea = dao.obtenerProductosConNombreArea();
+            ajustarPrecios(listaProductosConArea, porcentajes);
+            actualizarTablaProductos();
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error al cargar productos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void ajustarPrecios(List<Producto> productos, Map<Integer, Double> porcentajes) {
+        for (Producto producto : productos) {
+            double precioOriginal = producto.getPrecio();
+            double porcentaje = porcentajes.getOrDefault(producto.getAreaID(), 0.0);
+            double precioAjustado = precioOriginal + (precioOriginal * porcentaje / 100);
+            producto.setPrecio(precioAjustado);
+        }
+    }
+
+    
+    private void actualizarTablaProductos() {
+        DefaultTableModel model = (DefaultTableModel) TablaBusqueda.getModel();
+        model.setRowCount(0);
+        for (Producto producto : listaProductosConArea) {
+            model.addRow(new Object[]{
+                producto.getProductoID(),
+                producto.getNombre(),
+                producto.getMarca(),
+                String.format("%.2f", producto.getPrecio()),  // Formato a dos decimales
+                producto.getUnidadesDisponibles()
+            });
+        }
+    }
+
+
+
+    
+    
+     private void inicializarTablaCobro() {
+        DefaultTableModel modelo = (DefaultTableModel) TablaCobro.getModel();
+        modelo.addTableModelListener(new TableModelListener() {
             @Override
             public void tableChanged(TableModelEvent e) {
-                if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 1) {
-                    // Calcular el total cuando se actualiza la columna de unidades
+                if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 2) {  // Asumiendo que la columna 2 es la de unidades
                     int fila = e.getFirstRow();
-                    //int unidades = (int) TablaCobro.getValueAt(fila, 1);
-                    int unidades = Integer.parseInt(TablaCobro.getValueAt(fila, 1).toString());
-
-                    double precio = (double) TablaCobro.getValueAt(fila, 3);
-                    double total = unidades * precio;
-                    TablaCobro.setValueAt(total, fila, 4); 
-                    
-                    TableModel m = TablaCobro.getModel();
-                    actualizarTotal(m); //Se le introducen datos a con
-                    sin = quitarIVA(con);
-                    s.setText("" + sin);
-                    ivaa = con - sin;
-                    con = sin + ivaa;
-                    i.setText("" + ivaa);
-                    t.setText("" + con);
-                    System.out.println("con " + con);
-                    System.out.println("sin " + sin);
-                }else{
-                    //TableModel m = TablaCobro.getModel();
-                    //actualizarTotal(m, s);
+                    actualizarImporte(fila);
+                    CalcularTotales();
                 }
             }
         });
 
-    
     }
-    
+
+private void actualizarImporte(int fila) {
+    DefaultTableModel modelo = (DefaultTableModel) TablaCobro.getModel();
+    try {
+        int unidades = Integer.parseInt(modelo.getValueAt(fila, 2).toString()); // Columna 2 para unidades
+        double precioUnitario = Double.parseDouble(modelo.getValueAt(fila, 4).toString()); // Columna 4 para precio unitario, siempre mantiene el valor original con IVA
+
+        double importe = unidades * precioUnitario;  // Calcula el importe basado en las unidades
+
+        // Almacenar el importe directamente sin ajustar por IVA aquí
+        BigDecimal bd = new BigDecimal(importe);
+        bd = bd.setScale(2, RoundingMode.HALF_UP);
+        importe = bd.doubleValue();
+
+        modelo.setValueAt(importe, fila, 5);  // Actualiza la columna de importe con el valor Double redondeado
+
+        // Recalcula y actualiza los totales
+        CalcularTotales();
+    } catch (NumberFormatException ex) {
+        JOptionPane.showMessageDialog(this, "Error en formato numérico: " + ex.getMessage(), "Error de Formato", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+    private void CalcularTotales() {
+        DefaultTableModel modelo = (DefaultTableModel) TablaCobro.getModel();
+        double subtotal = 0.0, totalIVA = 0.0, total = 0.0;
+        for (int i = 0; i < modelo.getRowCount(); i++) {
+            double importe = (Double) modelo.getValueAt(i, 5); // Columna 5 tiene el importe
+            double precioSinIVA = importe / 1.16; // Calcula el precio sin IVA del importe
+            subtotal += precioSinIVA;
+            totalIVA += precioSinIVA * 0.16; // Calcula el IVA basado en el precio sin IVA
+        }
+        totaal = subtotal + totalIVA;
+
+        lblSubtotal.setText(String.format("%.2f", subtotal));
+        lblIva.setText(String.format("%.2f", totalIVA));
+        lblTotal.setText(String.format("%.2f", totaal));
+    }
+
+    public double returnTotal(){
+        return totaal;
+    }
+
     
     private void cambiarSeleccionEnTabla(int keyCode) {
         int rowCount = TablaBusqueda.getRowCount();
@@ -227,8 +308,9 @@ public class Venta extends javax.swing.JFrame {
 
         // Filtra la lista basado en el texto ingresado y actualiza la tabla
         for (Producto prod : listaProductosConArea) {
-            if (prod.getNombre().toLowerCase().contains(texto.toLowerCase()) || prod.getCodigoBarras().toLowerCase().contains(texto.toLowerCase())) {
+            if (prod.getNombre().toLowerCase().contains(texto.toLowerCase()) || String.valueOf(prod.getCodigoBarras()).contains(texto.toLowerCase())) {
                 model.addRow(new Object[]{
+                    prod.getProductoID(),
                     prod.getCodigoBarras(),
                     prod.getNombre(),
                     prod.getMarca(),
@@ -243,33 +325,67 @@ public class Venta extends javax.swing.JFrame {
     }
 
     private void agregarProductoACobroYCerrarTabla() {
-        int selectedRow = TablaBusqueda.getSelectedRow();
-        if (selectedRow != -1) {
-            Producto selectedProduct = listaFiltrada.get(selectedRow); // Usa lista filtrada
-            DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
+        int fila = TablaBusqueda.getSelectedRow();
+        boolean found = false;
+        
+        Producto selectedProduct = listaFiltrada.get(fila); // Usa lista filtrada
+        DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
 
-            // Preparar los datos del producto seleccionado
+        
+//        if (fila != -1) {
+//            Producto selectedProduct = listaFiltrada.get(fila); // Usa lista filtrada
+//            DefaultTableModel modelCobro = (DefaultTableModel) TablaCobro.getModel();
+//
+//            // Preparar los datos del producto seleccionado
+//            modelCobro.insertRow(0, new Object[]{
+//               selectedProduct.getProductoID(), // Nuevo campo PRODUCTOID
+//                selectedProduct.getCodigoBarras(),
+//                1,
+//                
+//                selectedProduct.getNombre(),
+//                selectedProduct.getPrecio(),
+//                precio(1, selectedProduct.getPrecio())
+//            });
+//
+//           // Asegura que la nueva fila sea visible en la parte superior
+//            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+//
+//            // Asegurarse de que el JScrollPane muestra la fila recién insertada en la parte superior
+//            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
+//            
+//            CalcularTotales();
+//
+//            jPanel6.setVisible(false); // Oculta jPanel6 al seleccionar un producto
+//        }
+        
+        if(fila == -1){
+            JOptionPane.showMessageDialog(null, "No se selecciono ninguna fila");
+        }else{
+            int cb = Integer.parseInt((String) TablaBusqueda.getValueAt(fila, 0).toString());
+                        
+            for (int i = 0; i < modelCobro.getRowCount(); i++) {
+                if ((int) modelCobro.getValueAt(i, 0) == cb) {
+                    int currentCantidad = (int) modelCobro.getValueAt(i, 2);
+                    modelCobro.setValueAt(currentCantidad + 1, i, 2);
+                    found = true;
+                    break;
+                }
+            }
+        if (!found) {
             modelCobro.insertRow(0, new Object[]{
+               selectedProduct.getProductoID(), // Nuevo campo PRODUCTOID
                 selectedProduct.getCodigoBarras(),
                 1,
+                
                 selectedProduct.getNombre(),
                 selectedProduct.getPrecio(),
                 precio(1, selectedProduct.getPrecio())
-            });
-            
-            TableModel m = TablaCobro.getModel();
-            actualizarTotal(m);
-            
-           // Asegura que la nueva fila sea visible en la parte superior
-            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
-
-            // Asegurarse de que el JScrollPane muestra la fila recién insertada en la parte superior
-            TablaCobro.scrollRectToVisible(TablaCobro.getCellRect(0, 0, true));
-
-            jPanel6.setVisible(false); // Oculta jPanel6 al seleccionar un producto
+            });;
+        }
+                
         }
     }
-    
+        
     public double precio(int u, double p){
         double t = u * p;
         return t;
@@ -319,9 +435,9 @@ public class Venta extends javax.swing.JFrame {
         desc = new javax.swing.JLabel();
         total = new javax.swing.JLabel();
         iva = new javax.swing.JLabel();
-        s = new javax.swing.JLabel();
-        t = new javax.swing.JLabel();
-        i = new javax.swing.JLabel();
+        lblSubtotal = new javax.swing.JLabel();
+        lblTotal = new javax.swing.JLabel();
+        lblIva = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         jLabel3 = new javax.swing.JLabel();
         Busqueda = new javax.swing.JTextField();
@@ -477,17 +593,17 @@ public class Venta extends javax.swing.JFrame {
                 .addGap(17, 17, 17)
                 .addComponent(sub)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(s, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lblSubtotal, javax.swing.GroupLayout.PREFERRED_SIZE, 65, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addGap(18, 18, 18)
                 .addComponent(iva)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(i, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lblIva, javax.swing.GroupLayout.PREFERRED_SIZE, 80, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(desc)
                 .addGap(144, 144, 144)
                 .addComponent(total)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(t, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(lblTotal, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap())
         );
         jPanel3Layout.setVerticalGroup(
@@ -495,14 +611,14 @@ public class Venta extends javax.swing.JFrame {
             .addGroup(jPanel3Layout.createSequentialGroup()
                 .addGap(16, 16, 16)
                 .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(i, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(t, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblIva, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblTotal, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                         .addComponent(sub)
                         .addComponent(desc)
                         .addComponent(total)
                         .addComponent(iva)
-                        .addComponent(s, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(lblSubtotal, javax.swing.GroupLayout.PREFERRED_SIZE, 19, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap(13, Short.MAX_VALUE))
         );
 
@@ -556,18 +672,26 @@ public class Venta extends javax.swing.JFrame {
 
             },
             new String [] {
-                "CODIGO", "UNIDADES", "PRODUCTO", "PRECIO UNI.", "IMPORTE"
+                "PRODUCTOID", "CODIGO", "UNIDADES", "PRODUCTO", "PRECIO UNI.", "IMPORTE"
             }
         ) {
             boolean[] canEdit = new boolean [] {
-                false, true, false, false, false
+                true, false, true, false, false, false
             };
 
             public boolean isCellEditable(int rowIndex, int columnIndex) {
                 return canEdit [columnIndex];
             }
         });
+        TablaCobro.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                TablaCobroKeyPressed(evt);
+            }
+        });
         jScrollPane1.setViewportView(TablaCobro);
+        if (TablaCobro.getColumnModel().getColumnCount() > 0) {
+            TablaCobro.getColumnModel().getColumn(0).setHeaderValue("PRODUCTOID");
+        }
 
         btnCobro.setText("Cobrar");
         btnCobro.addActionListener(new java.awt.event.ActionListener() {
@@ -633,9 +757,65 @@ public class Venta extends javax.swing.JFrame {
     }//GEN-LAST:event_BusquedaActionPerformed
 
     private void btnCobroActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCobroActionPerformed
-//        Cobro cobro= new Cobro();
-//        cobro.setVisible(true);
+    // Recopilación de productos desde la tabla.
+        List<Producto> productosSeleccionados = obtenerProductosSeleccionadosEnTabla();
+        if (productosSeleccionados.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No hay productos seleccionados para la venta.");
+            return;
+        }
+            try {
+            // Obtención del usuario logueado
+            Usuario usuarioActual = SesionManager.getInstance().getUsuarioLogueado();
+            if (usuarioActual == null) {
+                JOptionPane.showMessageDialog(this, "No hay usuario logueado.");
+                return;
+            }
+
+            // Creación de la instancia DAO y ejecución de la venta
+            CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
+            if (dao.completarVenta(usuarioActual.getUsuarioID(), productosSeleccionados)) {
+                //JOptionPane.showMessageDialog(this, "Venta completada con éxito.");
+
+                Cobro c = new Cobro();
+                c.setVisible(true);
+
+                // Limpiar tabla y actualizar interfaz según sea necesario
+                ((DefaultTableModel) TablaCobro.getModel()).setRowCount(0);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error al completar la venta.");
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error de conexión: " + ex.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
+        }
     }//GEN-LAST:event_btnCobroActionPerformed
+
+
+    private List<Producto> obtenerProductosSeleccionadosEnTabla() {
+        List<Producto> productos = new ArrayList<>();
+        DefaultTableModel modelo = (DefaultTableModel) TablaCobro.getModel();
+
+        for (int i = 0; i < modelo.getRowCount(); i++) {
+            Producto producto = new Producto();
+            try {
+                int productoID = Integer.parseInt(modelo.getValueAt(i, 0).toString()); // Suponiendo que la columna 0 tiene el ID
+                int cantidadUnid = Integer.parseInt(modelo.getValueAt(i, 2).toString()); // Suponiendo que la columna 2 tiene la cantidad
+                double precio = Double.parseDouble(modelo.getValueAt(i, 4).toString()); // Suponiendo que la columna 5 tiene el precio unitario
+
+                producto.setProductoID(productoID);
+                producto.setCantidad(cantidadUnid);
+                producto.setPrecio(precio);
+
+                productos.add(producto);
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Error en formato de número en la fila " + (i + 1) + ".", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+            } catch (NullPointerException e) {
+                JOptionPane.showMessageDialog(this, "Valor nulo encontrado en la fila " + (i + 1) + ".", "Error de Nulo", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+        return productos;
+    }
+
 
     private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel4MouseClicked
         // Mover dependiendo de la posición actual
@@ -668,8 +848,43 @@ public class Venta extends javax.swing.JFrame {
     }//GEN-LAST:event_BusquedaFocusLost
 
     private void btnEliminarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEliminarActionPerformed
-        // TODO add your handling code here:
+    // Obtener el modelo de la tabla
+    DefaultTableModel modelo = (DefaultTableModel) TablaCobro.getModel();
+
+    // Obtener el índice de la fila seleccionada
+    int filaSeleccionada = TablaCobro.getSelectedRow();
+
+    // Verificar si se ha seleccionado alguna fila
+    if (filaSeleccionada != -1) {
+        // Eliminar la fila seleccionada del modelo
+        modelo.removeRow(filaSeleccionada);
+
+        // Mostrar un mensaje de confirmación (opcional)
+        JOptionPane.showMessageDialog(this, "Producto eliminad correctamente.", "Eliminar", JOptionPane.INFORMATION_MESSAGE);
+
+        // Llamar a cualquier método que necesite ejecutar después de eliminar una fila, como recalcular totales si es necesario
+        CalcularTotales();
+    } else {
+        // Mostrar un mensaje si no hay fila seleccionada
+        JOptionPane.showMessageDialog(this, "Por favor seleccione una fila para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+
     }//GEN-LAST:event_btnEliminarActionPerformed
+
+    private void TablaCobroKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_TablaCobroKeyPressed
+    if (evt.getKeyCode() == KeyEvent.VK_ESCAPE) {
+        int filaSeleccionada = TablaCobro.getSelectedRow();
+        if (filaSeleccionada != -1) {
+            ((DefaultTableModel) TablaCobro.getModel()).removeRow(filaSeleccionada);
+            JOptionPane.showMessageDialog(this, "Producto eliminado correctamente.");
+        } else {
+            JOptionPane.showMessageDialog(this, "No hay fila seleccionada.");
+        }
+    }
+
+
+    }//GEN-LAST:event_TablaCobroKeyPressed
 
     /**
      * @param args the command line arguments
@@ -706,62 +921,10 @@ public class Venta extends javax.swing.JFrame {
         });
     }
     
-    private void actualizarTablaInventario() {
-    DefaultTableModel model = (DefaultTableModel) TablaCobro.getModel();
-    model.setRowCount(0); // Limpia la tabla completamente.
 
-        try {
-            CONSULTASDAO dao = new CONSULTASDAO(Conexion_DB.getConexion());
-            List<Producto> listaProductosConArea = dao.obtenerProductosConNombreArea(); // Obtiene la lista de productos con su área
 
-            // Recorre la lista y añade filas al modelo de la tabla
-            for (Producto inv : listaProductosConArea) {
-                model.addRow(new Object[]{
-                    inv.getCodigoBarras(),
-                    inv.getNombre(),
-                    inv.getMarca(),
-                    inv.getUnidadesDisponibles(),
-                    inv.getContenido(),
-                    inv.getNombreArea(), // Este es el nombre del área, asegúrate de tener este getter en Producto
-                    inv.getPrecio()
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error de Conexión", JOptionPane.ERROR_MESSAGE);
-            e.printStackTrace();
-        }
-    }
-    
-    private double quitarIVA(double p){
-        double SinIVA;
-        double ConIVA = p;
-        
-        SinIVA = ConIVA/1.16;
-        
-        return SinIVA;
-    }
-    
-    public void actualizarTotal(TableModel model/*, JLabel totalField*/) {
-        double total = 0.0;
-        int rowCount = model.getRowCount();
-        int totalColumnIndex = 4; // Índice de la columna de precios en este ejemplo
+  
 
-//        for (int i = 0; i < rowCount; i++) {
-//            double precio = (double) model.getValueAt(i, totalColumnIndex);
-//            total += precio;
-//        }
-        for (int i = 0; i < rowCount; i++) {
-            Object valorCelda = model.getValueAt(i, totalColumnIndex);
-            if (valorCelda != null) {
-                // Verificar si el valor de la celda no es nulo
-                double precio = Double.parseDouble(valorCelda.toString());
-                total += precio;
-            }else System.out.println(""+valorCelda);
-        }
-        
-        con = total;
-        //totalField.setText(String.valueOf(total));
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField Busqueda;
@@ -771,7 +934,6 @@ public class Venta extends javax.swing.JFrame {
     private javax.swing.JButton btnCobro;
     private javax.swing.JButton btnEliminar;
     private javax.swing.JLabel desc;
-    private javax.swing.JLabel i;
     private javax.swing.JLabel iva;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel3;
@@ -788,9 +950,10 @@ public class Venta extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel6;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JLabel s;
+    private javax.swing.JLabel lblIva;
+    private javax.swing.JLabel lblSubtotal;
+    private javax.swing.JLabel lblTotal;
     private javax.swing.JLabel sub;
-    private javax.swing.JLabel t;
     private javax.swing.JLabel total;
     // End of variables declaration//GEN-END:variables
 }
